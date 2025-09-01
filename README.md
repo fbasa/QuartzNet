@@ -1,0 +1,2 @@
+# QuartzNet
+QuartzNet + MassTransit + RabbitMQ
