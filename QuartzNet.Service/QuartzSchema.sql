@@ -92,6 +92,25 @@ BEGIN
     DROP TABLE [dbo].[QRTZ_TRIGGERS];
 END 
 
+CREATE TABLE [dbo].[QRTZ_JobQueue](
+  [JobId]        bigint IDENTITY PRIMARY KEY,
+  [JobType]      nvarchar(64)   NOT NULL,
+  [Payload]      nvarchar(max)  NULL,                 -- JSON or other
+  [Status]       tinyint        NOT NULL DEFAULT(0),  -- 0=pending,1=processing,2=done,3=failed
+  [Attempts]     int            NOT NULL DEFAULT(0),
+  [AvailableAt]  datetime2(0)   NOT NULL DEFAULT(sysutcdatetime()),
+  [LockedAt]     datetime2(0)   NULL,
+  [LockedBy]     nvarchar(128)  NULL,
+  [DispatchedAt] datetime2(0)   NULL,
+  [LastError]    nvarchar(4000) NULL
+);
+
+-- Create Quartz tables
+-- Tables created in order of foreign key dependencies
+-- Note: JobListeners and TriggerListeners tables are optional and not created here
+-- They can be created if you need to store listener information in the database
+-- Refer to Quartz documentation for details on creating these tables if needed
+
 CREATE TABLE [dbo].[QRTZ_CALENDARS] (
   [SCHED_NAME] nvarchar(120) NOT NULL,
   [CALENDAR_NAME] nvarchar(200) NOT NULL,
@@ -353,6 +372,8 @@ ALTER TABLE [dbo].[QRTZ_TRIGGERS] ADD
 GO
 
 -- Create indexes
+CREATE INDEX IX_QRTZ_JobQueue_Status_AvailableAt ON [dbo].[QRTZ_JobQueue]([Status], [AvailableAt]) INCLUDE([JobType], [Attempts]);
+
 CREATE INDEX [IDX_QRTZ_T_G_J]                 ON [dbo].[QRTZ_TRIGGERS](SCHED_NAME, JOB_GROUP, JOB_NAME);
 CREATE INDEX [IDX_QRTZ_T_C]                   ON [dbo].[QRTZ_TRIGGERS](SCHED_NAME, CALENDAR_NAME);
 

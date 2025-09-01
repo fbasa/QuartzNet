@@ -1,7 +1,8 @@
-﻿using Quartz;
+﻿using MassTransit;
+using Quartz;
+using QuartzNet.Service.Infrastructure;
 using QuartzNet.Service.Jobs;
 using QuartzNet.Service.Messaging;
-using QuartzNet.Service.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,8 +37,7 @@ builder.Services.AddQuartz(q =>
             .ForJob(jobKey)
             .WithIdentity("dequeue-and-publish-trigger", opts.WorkerGroup)
             .StartNow()
-            .WithSimpleSchedule(s => s.WithInterval(TimeSpan.FromSeconds(15)).RepeatForever()));
-
+            .WithSimpleSchedule(s => s.WithIntervalInSeconds(opts.IntervalInSeconds).RepeatForever()));
     }
 });
 
@@ -54,9 +54,27 @@ if (opts.UseRabbitMQ)
 else
 {
     builder.Services.AddHostedService<QuartzInitializer>();
+
 }
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider.GetRequiredService<ISchedulerFactory>();
+    var scheduler = await factory.GetScheduler();
+
+    if (opts.UseRabbitMQ)
+    {
+        // If using RabbitMQ, pause the HTTP dequeue job
+        await scheduler.PauseJob(new JobKey("dequeue-http"));
+    }
+    else
+    {
+        // If NOT using RabbitMQ, pause the dequeue-and-publish job
+        await scheduler.PauseJob(new JobKey("dequeue-and-publish", opts.WorkerGroup));
+    }
+}
 
 app.MapGet("/", () => "Scheduler up");
 

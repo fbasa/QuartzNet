@@ -1,16 +1,14 @@
+using Microsoft.Extensions.Options;
 using Quartz;
 using QuartzNet.Service.Jobs;
 
 namespace QuartzNet.Service.Infrastructure;
 
-public sealed class QuartzInitializer : IHostedService
+public sealed class QuartzInitializer(ISchedulerFactory factory, IOptions<AppOptions> options) : IHostedService
 {
-    private readonly ISchedulerFactory _factory;
-    public QuartzInitializer(ISchedulerFactory factory) => _factory = factory;
-
     public async Task StartAsync(CancellationToken ct)
     {
-        var scheduler = await _factory.GetScheduler(ct);
+        var scheduler = await factory.GetScheduler(ct);
 
         var job = JobBuilder.Create<DequeueHttpJobs>()
             .WithIdentity("dequeue-http")
@@ -19,7 +17,7 @@ public sealed class QuartzInitializer : IHostedService
         var trigger = TriggerBuilder.Create()
             .WithIdentity("dequeue-http-trigger")
             .StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInSeconds(10).RepeatForever())
+            .WithSimpleSchedule(s => s.WithIntervalInSeconds(options.Value.IntervalInSeconds).RepeatForever())
             .Build();
 
         await scheduler.ScheduleJob(job, [trigger], true, ct);

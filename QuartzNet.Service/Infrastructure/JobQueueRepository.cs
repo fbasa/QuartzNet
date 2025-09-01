@@ -14,7 +14,7 @@ public sealed class JobQueueRepository(IDbConnectionFactory factory) : IJobQueue
                 DECLARE @claimed TABLE(JobId bigint, JobType nvarchar(64), Payload nvarchar(max), Attempts int);
                 WITH cte(JobId,JobType,Payload,Status,Attempts,LockedAt,LockedBy) AS (
                   SELECT TOP (25) JobId, JobType, Payload,Status,Attempts,LockedAt,LockedBy
-                  FROM [dbo].JobQueue WITH (READPAST, UPDLOCK, ROWLOCK)
+                  FROM [dbo].[QRTZ_JobQueue] WITH (READPAST, UPDLOCK, ROWLOCK)
                   WHERE Status = 0 AND AvailableAt <= SYSUTCDATETIME()
                   ORDER BY JobId
                 )
@@ -33,30 +33,30 @@ public sealed class JobQueueRepository(IDbConnectionFactory factory) : IJobQueue
         using var con = await factory.OpenAsync(ct);
 
         const string sql = @"
-UPDATE dbo.JobQueue
-   SET Status = 0,
-       AvailableAt = DATEADD(SECOND,
-                             CASE WHEN @attempts > 10 THEN 300 ELSE CONVERT(int, POWER(2, @attempts)) END,
-                             SYSUTCDATETIME()),
-       LastError = LEFT(@error, 4000),
-       LockedBy = NULL,
-       LockedAt = NULL
- WHERE JobId = @jobId;
-";
+                            UPDATE [dbo].[QRTZ_JobQueue]
+                            SET Status = 0,
+                                AvailableAt = DATEADD(SECOND,
+                                                        CASE WHEN @attempts > 10 THEN 300 ELSE CONVERT(int, POWER(2, @attempts)) END,
+                                                        SYSUTCDATETIME()),
+                                LastError = LEFT(@error, 4000),
+                                LockedBy = NULL,
+                                LockedAt = NULL
+                            WHERE JobId = @jobId;
+                            ";
         await con.ExecuteAsync(new CommandDefinition(sql, new { jobId, error, attempts }, cancellationToken: ct));
     }
 
     public async Task MarkDispatchedAsync(long jobId, CancellationToken ct)
     {
         using var con = await factory.OpenAsync(ct);
-        const string sql = @"UPDATE dbo.JobQueue SET DispatchedAt = SYSUTCDATETIME() WHERE JobId = @jobId;";
+        const string sql = @"UPDATE [dbo].[QRTZ_JobQueue] SET DispatchedAt = SYSUTCDATETIME() WHERE JobId = @jobId;";
         await con.ExecuteAsync(new CommandDefinition(sql, new { jobId }, cancellationToken: ct));
     }
 
     public async Task MarkJobCompletedAsync(long jobId, CancellationToken ct)
     {
         using var con = await factory.OpenAsync(ct);
-        const string sql = @"UPDATE dbo.JobQueue SET Status=2, LockedAt=NULL, LockedBy=NULL, LastError=NULL WHERE JobId = @jobId;";
+        const string sql = @"UPDATE [dbo].[QRTZ_JobQueue] SET Status=2, LockedAt=NULL, LockedBy=NULL, LastError=NULL WHERE JobId = @jobId;";
         await con.ExecuteAsync(new CommandDefinition(sql, new { jobId }, cancellationToken: ct));
     }
 }

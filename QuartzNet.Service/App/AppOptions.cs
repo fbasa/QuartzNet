@@ -7,5 +7,6 @@ public sealed class AppOptions
     public int MaxPublishConcurrency { get; init; } = 15;    // parallel publishes
     public string WorkerGroup { get; init; } = "app";        // Quartz group for keys
     public bool UseRabbitMQ { get; init; } = false;          // enable RabbitMQ bus
+    public int IntervalInSeconds { get; init; } = 30;
     public string SendAndReceiveUrl { get; init; } = "api/external/SendAndReceiveApiUrl"; // relative URL for sending messages
 }
