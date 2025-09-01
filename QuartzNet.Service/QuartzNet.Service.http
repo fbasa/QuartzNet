@@ -1,0 +1,6 @@
+@QuartzNet.Service_HostAddress = http://localhost:5289
+
+GET {{QuartzNet.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
