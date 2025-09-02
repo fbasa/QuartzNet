@@ -1,8 +1,7 @@
-﻿using MassTransit;
-using Quartz;
-using QuartzNet.Service.Infrastructure;
+﻿using Quartz;
 using QuartzNet.Service.Jobs;
 using QuartzNet.Service.Messaging;
+using QuartzNet.Service.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,7 +53,6 @@ if (opts.UseRabbitMQ)
 else
 {
     builder.Services.AddHostedService<QuartzInitializer>();
-
 }
 
 var app = builder.Build();

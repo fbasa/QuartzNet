@@ -1,14 +1,14 @@
-using Microsoft.Extensions.Options;
 using Quartz;
-using QuartzNet.Service.Infrastructure;
 using System.Data;
-using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Channels;
+using Microsoft.Extensions.Options;
+using QuartzNet.Service.Infrastructure;
 
 namespace QuartzNet.Service.Jobs;
 
 [DisallowConcurrentExecution] // avoid overlapping runs of this job key
-public sealed class DequeueHttpJobs(IHttpClientFactory http, 
+public sealed class DequeueHttpJobs(
+    IHttpClientFactory http, 
     IJobQueueRepository repo,
     IOptions<AppOptions> opts,
     ILogger<DequeueHttpJobs> log) : IJob

@@ -5,7 +5,8 @@ using QuartzNet.Service.Infrastructure;
 
 namespace QuartzNet.Service.Messaging;
 
-public sealed class HttpJobConsumer(IHttpClientFactory http, 
+public sealed class HttpJobConsumer(
+    IHttpClientFactory http, 
     IJobQueueRepository repo,
     IOptions<AppOptions> opts) : IConsumer<ProcessJob>
 {
